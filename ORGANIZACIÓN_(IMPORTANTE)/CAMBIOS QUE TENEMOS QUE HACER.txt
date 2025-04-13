@@ -5,7 +5,7 @@ TAMBIÉN PODEMOS PONER COMENTARIOS EN ALGUNO SI LO DEJAMOS A LA MITAD
 !    Esto tenemo que hacerlo lo primero, y recordad que cualquier cosa que no entendamos tiene que estar clara para la entrevista,
 !    Intentad simplificar y hacer las cosas lo mas entendibles. 
 !    Si algo no lo entendeis marcadlo en comentarios y se intentará explicar o cambiar.
- De momento, propongo que las variables tengan minimo dos letras de diferencia de una a otra, para que no se confundan (Ya me decis que pensais)
+--De momento, propongo que las variables tengan minimo dos letras de diferencia de una a otra, para que no se confundan (Ya me decis que pensais)
 
 
 1. multiplicar puntos por numero de consonantes acertadas
