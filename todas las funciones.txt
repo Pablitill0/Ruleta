@@ -1,0 +1,21 @@
+load_phrases()
+
+select_phrase()
+
+process_phrase()
+
+create_player()
+
+def spin_wheel(
+
+def apply_wheel_result()
+
+check_win_condition()
+
+update_phrase_state()
+
+play_turn()
+
+end_game()
+
+main()

@@ -1,0 +1,22 @@
+AQUÍ PONEMOS TODOS LOS CAMBIOS QUE TENEMOS QUE HACER Y LOS MARCAREMOS COMO HECHOS CUANDO LOS ACABEMOS,
+TAMBIÉN PODEMOS PONER COMENTARIOS EN ALGUNO SI LO DEJAMOS A LA MITAD
+
+!0.  Debatir que formato queremos que tenga el codigo, seguir unas reglas comunes, como nombres de variables o nombres de funciones.
+!    Esto tenemo que hacerlo lo primero, y recordad que cualquier cosa que no entendamos tiene que estar clara para la entrevista,
+!    Intentad simplificar y hacer las cosas lo mas entendibles. 
+!    Si algo no lo entendeis marcadlo en comentarios y se intentará explicar o cambiar.
+ De momento, propongo que las variables tengan minimo dos letras de diferencia de una a otra, para que no se confundan (Ya me decis que pensais)
+
+
+1. multiplicar puntos por numero de consonantes acertadas
+2. Sumar puntos solo cuando se acierta
+3. hacer comodin "me lo quedo"  ###EN PROCESO###
+4. hacer un menu para elegir que hacer cada ronda (girar ruleta, resolver, comprar vocal)
+5. Funcion para que se pueda resolver toda la frase
+###HECHO###6. No permitir los intentos de frases cuando se intenta adivinar letras (la unica respuesta permitida debe tener len() == 1)
+7. Poder comprar vocales (buscar precio por vocal en internet (creo que es 50))
+8. No permitir adivinar vocales, solo consonantes 
+9. Hacer comodin "se lo doy"  ###EN PROCESO###
+10. Hacer que el sistema de probabilidades con las opciones correctas de la ruleta
+11. Hacer una funcion de ruleta sin comodines para poder jugar un solo jugador
+12. Hacer una lista permanente de clasificación
