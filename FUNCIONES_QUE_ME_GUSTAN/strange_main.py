@@ -1,7 +1,7 @@
 import random
 import time
 import string
-import os # Necesario para manejar archivos y carpetas
+import os
 
 # --- CONSTANTES Y DATOS DEL JUEGO ---
 
@@ -13,23 +13,19 @@ ARCHIVO_CLASIFICACION = "clasificacion.txt"
 
 # Ruleta Multijugador (con comodines)
 SECTORES_RULETA_MULTI = [75, 50, 100, 150, "PIERDE TURNO", "QUIEBRA", 25, "SE LO DOY", "ME LO QUEDO", 200]
-PESOS_RULETA_MULTI    = [4,  4,  2,   2,   2,            2,       1,   1,          1,           1]
+PESOS_RULETA_MULTI    = [4,  4,  2,   2,   2,            2,       1,   1,          1,           1] # Suma = 20
 
 # Ruleta Individual (sin comodines ME LO QUEDO/SE LO DOY)
-# Reemplazamos comodines con valores (ej. 50 extra y 25 extra) o mas PIERDE TURNO/QUIEBRA
-# Opcion simple: quitar comodines y ajustar pesos (total debe sumar)
-SECTORES_RULETA_IND = [75, 50, 100, 150, "PIERDE TURNO", "QUIEBRA", 25, 200] # Quitamos SE LO DOY, ME LO QUEDO
-# Ajustamos pesos (originales: 4, 4, 2, 2, 2, 2, 1, 1) -> Suma 18. Redistribuimos los 2 puntos faltantes
-PESOS_RULETA_IND    = [4,  5,  2,   2,   3,            2,       1,   1] # Suma 20 (ej: +1 a 50, +1 a PIERDE TURNO)
-
+SECTORES_RULETA_IND = [75, 50, 100, 150, "PIERDE TURNO", "QUIEBRA", 25, 200]
+PESOS_RULETA_IND    = [4,  5,  2,   2,   3,            2,       1,   1] # Suma = 20
 
 VOCALES = "aeiou"
 CONSONANTES = "bcdfghjklmnpqrstvwxyz"
 COSTO_VOCAL = 50
-MAX_CLASIFICACION = 10 # Maximo numero de entradas en la clasificacion
+MAX_CLASIFICACION = 10
 
 # --- FUNCIONES DE MANEJO DE ARCHIVOS ---
-
+# (Sin cambios respecto a la version anterior)
 def generar_archivos_frases_si_no_existen():
     """Crea archivos de frases de ejemplo si no existen."""
     archivos_frases = {
@@ -53,12 +49,11 @@ def cargar_frases(nombre_archivo):
     try:
         with open(nombre_archivo, "r", encoding="utf-8") as f:
             for linea in f:
-                frase = linea.strip().upper() # Limpiar y convertir a mayusculas
-                if frase: # Ignorar lineas vacias
+                frase = linea.strip().upper()
+                if frase:
                     frases.append(frase)
     except FileNotFoundError:
         print(f"Error: No se encontro el archivo de frases '{nombre_archivo}'.")
-        # Podria devolver una lista vacia o salir, aqui devolvemos vacia
     except IOError as e:
         print(f"Error al leer el archivo {nombre_archivo}: {e}")
     return frases
@@ -81,15 +76,13 @@ def cargar_clasificacion():
         print("No se encontro archivo de clasificacion. Se creara uno nuevo.")
     except IOError as e:
         print(f"Error al leer la clasificacion: {e}")
-    # Ordenar por puntos descendente al cargar
     clasificacion.sort(key=lambda item: item["puntos"], reverse=True)
     return clasificacion
 
 def guardar_clasificacion(clasificacion):
     """Guarda la clasificacion actualizada en el archivo."""
-    # Ordenar por puntos y limitar tamaño antes de guardar
     clasificacion.sort(key=lambda item: item["puntos"], reverse=True)
-    clasificacion_a_guardar = clasificacion[:MAX_CLASIFICACION] # Tomar solo los mejores N
+    clasificacion_a_guardar = clasificacion[:MAX_CLASIFICACION]
 
     try:
         with open(ARCHIVO_CLASIFICACION, "w", encoding="utf-8") as f:
@@ -106,8 +99,6 @@ def actualizar_clasificacion(jugadores_partida):
     for jugador in jugadores_partida:
         nombre_jugador = jugador["nombre"]
         puntos_jugador = jugador["puntos"]
-
-        # Si el jugador ya esta, actualizar si mejora puntos
         actualizado = False
         for i in range(len(clasificacion_actual)):
             if clasificacion_actual[i]["nombre"] == nombre_jugador:
@@ -116,36 +107,48 @@ def actualizar_clasificacion(jugadores_partida):
                     clasificacion_actual[i]["puntos"] = puntos_jugador
                 actualizado = True
                 break
-
-        # Si no estaba, anadirlo
         if not actualizado:
             clasificacion_actual.append({"nombre": nombre_jugador, "puntos": puntos_jugador})
 
     guardar_clasificacion(clasificacion_actual)
 
-
 # --- FUNCIONES BASICAS DEL JUEGO (TRADUCIDAS) ---
 
 def crear_jugador(nombre):
-    # Las claves del diccionario tambien en espanol
     return {"nombre": nombre, "puntos": 0}
 
+# ===== FUNCION MODIFICADA =====
 def girar_ruleta(es_individual):
-    """Simula giro de ruleta segun modo de juego."""
+    """
+    Simula giro de ruleta construyendo una lista expandida
+    basada en los pesos de cada sector.
+    """
     if es_individual:
-        sectores = SECTORES_RULETA_IND
-        pesos = PESOS_RULETA_IND
+        sectores_base = SECTORES_RULETA_IND
+        pesos_base = PESOS_RULETA_IND
+        print("(Usando ruleta individual)") # Mensaje opcional para depuracion
     else:
-        sectores = SECTORES_RULETA_MULTI
-        pesos = PESOS_RULETA_MULTI
+        sectores_base = SECTORES_RULETA_MULTI
+        pesos_base = PESOS_RULETA_MULTI
+        print("(Usando ruleta multijugador)") # Mensaje opcional
 
-    resultado = random.choices(sectores, weights=pesos, k=1)[0]
+    # Construir la lista expandida que representa la ruleta completa
+    ruleta_expandida = []
+    # Usamos zip para recorrer sectores y pesos a la par
+    for sector, peso in zip(sectores_base, pesos_base):
+        # Anadimos el 'sector' a la lista 'peso' veces
+        # Ejemplo: si sector=75 y peso=4, anade [75, 75, 75, 75]
+        ruleta_expandida.extend([sector] * peso)
+
+    # Elegir un elemento al azar de la lista expandida (todos tienen igual prob ahora)
+    resultado = random.choice(ruleta_expandida)
     return resultado
+# ===== FIN FUNCION MODIFICADA =====
 
 def inicializar_estado_frase(frase):
+    # (Sin cambios)
     estado = ""
     for caracter in frase:
-        # Usamos isalpha() que funciona con caracteres Unicode (incluye ñ)
         if caracter.isalpha():
             estado += "_"
         else:
@@ -153,26 +156,26 @@ def inicializar_estado_frase(frase):
     return estado
 
 def contar_aciertos(frase, letra):
+    # (Sin cambios)
     return frase.lower().count(letra.lower())
 
 def actualizar_estado_frase(frase_original, estado_actual_frase, letra_adivinada):
+    # (Sin cambios)
     nuevo_estado_lista = list(estado_actual_frase)
     letra_adivinada = letra_adivinada.lower()
     frase_original_lower = frase_original.lower()
-
     for i in range(len(frase_original_lower)):
         if frase_original_lower[i] == letra_adivinada:
-            # Revelar la letra original (mantiene mayus/minus)
             if frase_original[i].isalpha():
                  nuevo_estado_lista[i] = frase_original[i]
-
     return "".join(nuevo_estado_lista)
 
 def verificar_victoria(estado_frase):
+    # (Sin cambios)
     return "_" not in estado_frase
 
 # --- FUNCIONES DE LOGICA DE TURNO (TRADUCIDAS) ---
-
+# (Sin cambios respecto a la version anterior)
 def aplicar_resultado_ruleta(jugador_activo, sector, todos_jugadores):
     """Aplica efecto de la ruleta. Devuelve int, "TURNO_TERMINADO" o "COMODIN_TERMINADO"."""
     print(f"La ruleta cayo en: {sector}")
@@ -195,7 +198,6 @@ def aplicar_resultado_ruleta(jugador_activo, sector, todos_jugadores):
         print(f"\n{jugador_activo['nombre']} cayo en el comodin 'ME LO QUEDO'.")
         jugadores_con_puntos = []
         for participante in todos_jugadores:
-            # Usamos claves en espanol
             if participante["nombre"] != jugador_activo["nombre"] and participante["puntos"] > 0:
                 jugadores_con_puntos.append({"nombre": participante["nombre"], "puntos": participante["puntos"]})
 
@@ -281,9 +283,10 @@ def aplicar_resultado_ruleta(jugador_activo, sector, todos_jugadores):
             else:
                 print(f"Error: '{nombre_elegido}' no es un candidato valido. Revisa la lista e intenta de nuevo.")
 
-    return "TURNO_TERMINADO" # Por si acaso
+    return "TURNO_TERMINADO"
 
 def mostrar_estado_juego(jugador, estado_frase, letras_usadas):
+    # (Sin cambios)
     print("\n" + "="*40)
     print(f"Turno de: {jugador['nombre']} (Puntos: {jugador['puntos']})")
     print(f"Frase: {estado_frase}")
@@ -294,6 +297,7 @@ def mostrar_estado_juego(jugador, estado_frase, letras_usadas):
     print("="*40)
 
 def obtener_opcion_principal(jugador):
+    # (Sin cambios)
     while True:
         print("\nElige una opcion:")
         print(f"1. Comprar vocal ({COSTO_VOCAL} puntos)")
@@ -309,10 +313,10 @@ def obtener_opcion_principal(jugador):
             print("Opcion invalida. Introduce 1, 2 o 3.")
 
 def comprar_vocal(jugador, frase, estado_frase, letras_usadas):
+    # (Sin cambios)
     if jugador["puntos"] < COSTO_VOCAL:
         print("Error interno: No deberias poder elegir esta opcion sin puntos.")
         return estado_frase, False
-
     while True:
         vocal = input("Introduce la vocal que quieres comprar: ").lower()
         if len(vocal) != 1 or vocal not in VOCALES:
@@ -321,12 +325,10 @@ def comprar_vocal(jugador, frase, estado_frase, letras_usadas):
         if vocal in letras_usadas:
             print(f"La vocal '{vocal}' ya ha sido usada. Elige otra.")
             continue
-
         jugador["puntos"] -= COSTO_VOCAL
         letras_usadas.add(vocal)
         print(f"Has comprado la vocal '{vocal}' por {COSTO_VOCAL} puntos.")
         print(f"Tu puntuacion ahora es: {jugador['puntos']}")
-
         if vocal in frase.lower():
             print(f"¡Bien! La vocal '{vocal}' esta en la frase.")
             nuevo_estado = actualizar_estado_frase(frase, estado_frase, vocal)
@@ -334,9 +336,10 @@ def comprar_vocal(jugador, frase, estado_frase, letras_usadas):
             return nuevo_estado, True
         else:
             print(f"Lo siento, la vocal '{vocal}' no esta en la frase.")
-            return estado_frase, True # Accion valida, aunque no acierte
+            return estado_frase, True
 
 def pedir_consonante(jugador, frase, estado_frase, letras_usadas, valor_ruleta):
+    # (Sin cambios)
     while True:
         consonante = input("Introduce una consonante: ").lower()
         if len(consonante) != 1 or consonante not in CONSONANTES:
@@ -344,8 +347,7 @@ def pedir_consonante(jugador, frase, estado_frase, letras_usadas, valor_ruleta):
             continue
         if consonante in letras_usadas:
             print(f"La consonante '{consonante}' ya ha sido usada. Pierdes el turno.")
-            return estado_frase, False # Falla, pierde turno
-
+            return estado_frase, False
         letras_usadas.add(consonante)
         if consonante in frase.lower():
             num_aciertos = contar_aciertos(frase, consonante)
@@ -356,35 +358,31 @@ def pedir_consonante(jugador, frase, estado_frase, letras_usadas, valor_ruleta):
             print(f"Tu puntuacion ahora es: {jugador['puntos']}")
             nuevo_estado = actualizar_estado_frase(frase, estado_frase, consonante)
             print(f"Frase actualizada: {nuevo_estado}")
-            return nuevo_estado, True # Exito
+            return nuevo_estado, True
         else:
             print(f"Lo siento, la consonante '{consonante}' no esta en la frase. Pierdes el turno.")
-            return estado_frase, False # Falla, pierde turno
+            return estado_frase, False
 
 def intentar_resolver(jugador, frase_real, estado_actual_frase):
+    # (Sin cambios)
     print("\n--- Intentar Resolver ---")
     print(f"Frase actual: {estado_actual_frase}")
-    intento = input("Escribe la frase completa que crees que es: ").strip().upper() # Comparar en mayusculas
-
-    if intento == frase_real: # frase_real ya esta en mayusculas
+    intento = input("Escribe la frase completa que crees que es: ").strip().upper()
+    if intento == frase_real:
         print(f"¡¡¡CORRECTO!!! ¡Has resuelto la frase!")
-        return True # Juego terminado
+        return True
     else:
         print("Lo siento, esa no es la frase correcta. Pierdes el turno.")
-        return False # Juego continua, turno acaba
+        return False
 
 def finalizar_partida(jugadores):
+    # (Sin cambios)
     print("\n¡Partida terminada! Resultados finales:")
     jugadores.sort(key=lambda j: j["puntos"], reverse=True)
-
     for jugador in jugadores:
         print(f"- {jugador['nombre']}: {jugador['puntos']} puntos")
-
-    # Actualizar clasificacion general
     print("\nActualizando clasificacion general...")
     actualizar_clasificacion(jugadores)
-
-    # Mostrar ganador(es) de la partida
     if jugadores:
         ganador = jugadores[0]
         ganadores = [j for j in jugadores if j['puntos'] == ganador['puntos']]
@@ -396,14 +394,13 @@ def finalizar_partida(jugadores):
     else:
         print("\nNo hubo jugadores en esta partida.")
 
-
 # --- FUNCION PRINCIPAL DE LA PARTIDA ---
-
+# (Sin cambios respecto a la version anterior)
 def iniciar_partida(num_jugadores, frases_seleccionadas):
     """Inicia y gestiona una partida."""
     if not frases_seleccionadas:
         print("No hay frases disponibles para jugar con la dificultad seleccionada.")
-        return # Salir si no hay frases
+        return
 
     # 1. Crear jugadores
     jugadores = []
@@ -432,7 +429,7 @@ def iniciar_partida(num_jugadores, frases_seleccionadas):
 
     while not partida_terminada:
         jugador_activo = jugadores[indice_jugador_actual]
-        turno_activo = True # Puede realizar acciones en su turno
+        turno_activo = True
 
         mostrar_estado_juego(jugador_activo, estado_actual_frase, letras_usadas)
 
@@ -443,7 +440,7 @@ def iniciar_partida(num_jugadores, frases_seleccionadas):
                 estado_actual_frase, exito_compra = comprar_vocal(
                     jugador_activo, frase_a_adivinar, estado_actual_frase, letras_usadas
                 )
-                turno_activo = False # Comprar vocal siempre termina la accion principal del turno
+                turno_activo = False
                 if verificar_victoria(estado_actual_frase):
                     partida_terminada = True
                     print(f"\n¡{jugador_activo['nombre']} ha completado la frase al comprar una vocal!")
@@ -452,28 +449,26 @@ def iniciar_partida(num_jugadores, frases_seleccionadas):
                 gano = intentar_resolver(jugador_activo, frase_a_adivinar, estado_actual_frase)
                 if gano:
                     partida_terminada = True
-                    estado_actual_frase = frase_a_adivinar # Revelar frase
-                turno_activo = False # Resolver siempre termina la accion
+                    estado_actual_frase = frase_a_adivinar
+                turno_activo = False
 
             elif opcion == 3: # Girar Ruleta
-                sector_ruleta = girar_ruleta(es_individual) # Pasa si es individual o no
+                sector_ruleta = girar_ruleta(es_individual)
                 resultado_ruleta = aplicar_resultado_ruleta(jugador_activo, sector_ruleta, jugadores)
 
-                if isinstance(resultado_ruleta, int): # Toco puntos -> pedir consonante
+                if isinstance(resultado_ruleta, int):
                     estado_actual_frase, acerto_consonante = pedir_consonante(
                         jugador_activo, frase_a_adivinar, estado_actual_frase, letras_usadas, resultado_ruleta
                     )
                     if not acerto_consonante:
-                        turno_activo = False # Fallar consonante termina el turno
-                    # Si acerto, turno_activo sigue True, puede elegir otra accion
+                        turno_activo = False
                     if verificar_victoria(estado_actual_frase):
                          partida_terminada = True
                          print(f"\n¡{jugador_activo['nombre']} ha completado la frase al adivinar una consonante!")
 
                 elif resultado_ruleta == "TURNO_TERMINADO" or resultado_ruleta == "COMODIN_TERMINADO":
-                    turno_activo = False # Ruleta/Comodin terminaron el turno
+                    turno_activo = False
 
-            # Mostrar estado si el turno continua y no ha terminado la partida
             if turno_activo and not partida_terminada:
                  mostrar_estado_juego(jugador_activo, estado_actual_frase, letras_usadas)
 
@@ -488,8 +483,9 @@ def iniciar_partida(num_jugadores, frases_seleccionadas):
     print(frase_a_adivinar)
     finalizar_partida(jugadores)
 
-# --- MENU PRINCIPAL ---
 
+# --- MENU PRINCIPAL ---
+# (Sin cambios respecto a la version anterior)
 def mostrar_menu_principal():
     print("\n===== RUEDA DE LA FORTUNA =====")
     print("1. Jugar Nueva Partida")
@@ -525,24 +521,18 @@ def mostrar_clasificacion_pantalla():
     if not clasificacion:
         print("Aun no hay nadie en la clasificacion.")
     else:
-        # Mostrar los N mejores (ya estan ordenados al cargar)
         for i, entrada in enumerate(clasificacion[:MAX_CLASIFICACION]):
             print(f"{i+1}. {entrada['nombre']} - {entrada['puntos']} puntos")
     print("---------------------------")
     input("\nPresiona Enter para volver al menu...")
 
-
 # --- BLOQUE PRINCIPAL DE EJECUCION ---
-
+# (Sin cambios respecto a la version anterior)
 if __name__ == "__main__":
-    # Asegurarse que los archivos de frases existen
     generar_archivos_frases_si_no_existen()
-
     while True:
         opcion_menu = mostrar_menu_principal()
-
-        if opcion_menu == 1: # Jugar
-            # Pedir numero de jugadores
+        if opcion_menu == 1:
             while True:
                 try:
                     num_jugadores = int(input("Introduce el numero de jugadores (1 o mas): "))
@@ -552,21 +542,14 @@ if __name__ == "__main__":
                         print("Debe haber al menos 1 jugador.")
                 except ValueError:
                     print("Por favor, introduce un numero valido.")
-
-            # Elegir dificultad y cargar frases
             archivo_dificultad = elegir_dificultad()
             frases_juego = cargar_frases(archivo_dificultad)
-
-            # Iniciar la partida si hay frases
             if frases_juego:
                 iniciar_partida(num_jugadores, frases_juego)
             else:
                 print(f"No se pudieron cargar frases de '{archivo_dificultad}'. No se puede iniciar la partida.")
-
-
-        elif opcion_menu == 2: # Ver Clasificacion
+        elif opcion_menu == 2:
             mostrar_clasificacion_pantalla()
-
-        elif opcion_menu == 3: # Salir
+        elif opcion_menu == 3:
             print("¡Gracias por jugar! Adios.")
             break
